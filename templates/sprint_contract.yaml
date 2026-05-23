@@ -101,3 +101,43 @@ mandatory_new_baselines: []
 # wandb tag names for each axis we're varying — used by /tree-viz to color/group.
 axes_changed: []
   # Example (vla3d): ["Gaussian-KV", "per-step", "decoder-only", "no-aux", "pi0.5"]
+
+# -----------------------------------------------------------------------------
+# External-ref validators (NEW v2) — checked by `/sprint-contract --check-refs`
+# before --sign. Each entry: {type: <kind>, ...kind-specific fields}.
+#
+# Supported types (see tools/verify_contract.py::VALIDATORS):
+#   - partition     fields: name, host (optional, default local)
+#                   runs `sinfo -p $name` via ssh; non-empty = pass
+#   - conda_env     fields: path, host (optional)
+#                   asserts $path/bin/python is executable + reports --version
+#   - hf_repo       fields: id (org/repo), kind (model|dataset, default model)
+#                   HEAD /api/{kind}s/{id}; 200 = pass
+#   - wandb_project fields: entity, project
+#                   HEAD https://wandb.ai/$entity/$project; <400 = pass
+#   - pkg_version   fields: pkg, expected (optional), conda_env_path, host (opt)
+#                   imports pkg + checks __version__
+#   - arxiv         fields: id (e.g. 2410.24164)
+#                   HEAD https://arxiv.org/abs/$id; 200 = pass
+# -----------------------------------------------------------------------------
+validators: []
+  # Example (vla3d Sprint 2):
+  # - type: partition
+  #   name: gpu
+  #   host: hpcc
+  # - type: conda_env
+  #   path: /bigdata/jlilab/lgong024/.conda/envs/dynamem_pi05
+  #   host: hpcc
+  # - type: pkg_version
+  #   pkg: lerobot
+  #   expected: 0.5.2
+  #   conda_env_path: /bigdata/jlilab/lgong024/.conda/envs/dynamem_pi05
+  #   host: hpcc
+  # - type: hf_repo
+  #   id: lerobot/pi05_base
+  #   kind: model
+  # - type: wandb_project
+  #   entity: gonglitian
+  #   project: vla3d
+  # - type: arxiv
+  #   id: 2410.24164      # π0 paper
