@@ -1,0 +1,55 @@
+{
+  "_comment": "auto-production default hooks. Copy to .claude/settings.json. AUTO_PRODUCTION_REPO env var must point to the repo root.",
+
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {"type": "command", "command": "bash $AUTO_PRODUCTION_REPO/hooks/pre_session_sync.sh"}
+        ]
+      }
+    ],
+
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {"type": "command", "command": "bash $AUTO_PRODUCTION_REPO/hooks/pre_destructive_git.sh"}
+        ]
+      }
+    ],
+
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {"type": "command", "command": "bash $AUTO_PRODUCTION_REPO/hooks/post_promise_check.sh"}
+        ]
+      }
+    ],
+
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {"type": "command", "command": "bash $AUTO_PRODUCTION_REPO/hooks/stop_smoke_gate.sh"}
+        ]
+      }
+    ]
+  },
+
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(squeue:*)",
+      "Bash(nvidia-smi:*)",
+      "Bash(tmux ls:*)",
+      "Bash(python3 $AUTO_PRODUCTION_REPO/tools/*:*)",
+      "Bash(bash $AUTO_PRODUCTION_REPO/tools/*:*)"
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+# Karpathy 5-tuple stub (shorthand)
+#
+# A "minimal" 5-tuple for quick sprints. For real experiments use
+# templates/sprint_contract.yaml which has length checks + guard threshold rules.
+
+goal: ""        # what question
+scope: ""       # what NOT to do
+metric: ""      # quantified success criterion
+verify: ""     # multi-seed / baseline comparison plan
+guard: ""       # PIVOT trigger (must contain measurable threshold)

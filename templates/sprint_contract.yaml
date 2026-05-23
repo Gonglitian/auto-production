@@ -1,0 +1,37 @@
+# sprint_contract.yaml — Karpathy 5-tuple (per /sprint-contract skill)
+#
+# Required fields: goal / scope / metric / verify / guard
+# Min 30 chars each. `guard` must contain a measurable threshold.
+# `verify` must mention seed or baseline.
+#
+# Edit each field then run:
+#   /sprint-contract --verify
+#   /sprint-contract --sign
+
+goal: |
+  (one paragraph — the question this experiment answers)
+  Example: "Verify that KL-distillation against 5 guiding policies
+  achieves >= 80% SR on MC10 in <= 50M timesteps, beating
+  hard-target supervision baseline by >= 10% relative."
+
+scope: |
+  (what we will NOT touch — anti scope-creep)
+  Example: "Do not change LR schedule, backbone, env reward shaping
+  weights, or batch size. Stage 1 guiding policies stay frozen."
+
+metric: |
+  (quantified success criterion)
+  Example: "Primary: mean MC10 success rate over 5 eval seeds at
+  step 50M. Secondary: wall-clock to first 80%-SR checkpoint."
+
+verify: |
+  (how we know it's not a fluke; must mention seed/baseline)
+  Example: "5 random seeds {41,43,47,53,59}; bootstrap 95% CI;
+  must beat /run-zero baseline by >= 5% with non-overlapping CIs.
+  Also overlap pre-trained ckpt SR should be < 5% (sanity)."
+
+guard: |
+  (what triggers PIVOT — must contain measurable threshold)
+  Example: "If SR < 60% at step 30M, or train_loss stalls for
+  > 1M steps with relative-change < 1%, trigger PIVOT. Also
+  PIVOT if KL > 5.0 (distillation diverging)."
