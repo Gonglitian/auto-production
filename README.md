@@ -111,7 +111,7 @@ cp <repo>/templates/sprint_contract.yaml ./sprint_contract.yaml
 /sleep-research "训完 stage 1 + 2 + eval，醒来给我 PROCEED/REFINE/PIVOT 报告"
 ```
 
-详细安装见 [`docs/INSTALL.md`](docs/INSTALL.md)。
+5 分钟上手见 [`docs/QUICKSTART.md`](docs/QUICKSTART.md)，完整安装见 [`docs/INSTALL.md`](docs/INSTALL.md)。
 
 ---
 
