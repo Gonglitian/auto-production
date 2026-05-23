@@ -30,7 +30,10 @@ driver 通过 4 个 tmux 原子操作完成全程：
 
 ## Critical patterns (实战发现)
 
-### 1. CC UI 假"pending input"陷阱 ⚠️
+> 实战来源标记：⓪=vla3d Stage 1-4 walkthrough；①=vla3d Stage 5 implementation；
+> ②=vla3d hpcc deploy round 3。
+
+### 1. CC UI 假"pending input"陷阱 ⚠️ ⓪
 
 Sub-agent 写完一段后**自动在 input 框 suggest 下一动作的文字**（如「进 Stage 2」「直接进 Stage 3」「等 datalake 完成再继续」）。看起来像 pending 输入但**按 Enter 不会 submit**。
 **正确做法**：先 `Escape` 清 input，再 `send-keys "your message" Enter`。
@@ -41,7 +44,7 @@ sleep 1
 tmux send-keys -t research:vla3d "go Stage 5" Enter
 ```
 
-### 2. AskUserQuestion UI 导航
+### 2. AskUserQuestion UI 导航 ⓪
 
 Sub-agent 弹 multi-choice 时屏幕显示：
 ```
@@ -56,7 +59,7 @@ Enter to select · Tab/Arrow keys to navigate · Esc to cancel
 - 选别的：`Tab`（下） / `BSpace` 或 `Up` （上）N 次再 Enter
 - multi-choice 后会再问「Submit answers?」，再发一次 Enter 才真提交
 
-### 3. Wait-for-idle 检测
+### 3. Wait-for-idle 检测 ⓪①
 
 不要 `sleep 30` 后盲读——sub-agent 可能还在思考或刚开始新工具调用。用 polling：
 
@@ -81,7 +84,7 @@ done
 
 跑成 background task（`run_in_background: true`），不阻塞 driver 处理别的事。
 
-### 4. 长 brief 用文件而非 send-keys
+### 4. 长 brief 用文件而非 send-keys ⓪
 
 >200 字符的 brief 直接 send-keys 经常被 cc 截断或排版乱。**改成写文件**：
 
@@ -93,9 +96,55 @@ EOF
 tmux send-keys -t $TARGET "读 .driver_brief.md 然后按里面要求走" Enter
 ```
 
-### 5. 报告频率契约
+### 5. 报告频率契约 ⓪
 
 Brief 里**强制要求** sub-agent 每段大动作 + stage 末尾用 `/conclusion-first` 5-段格式汇报，driver 读 capture-pane 拿摘要。否则 driver 要爬全屏 N 段才能拼出来。
+
+### 6. 批量授权减少 round-trip ①
+
+每个 sub-section 等 driver approve 一次特别慢（cc 思考 + driver 看 + 决策 + 类 + 等）。
+观察到 sub-agent 计划清晰可信时，**一次 batch authorize** 全部剩余 step：
+
+```
+go all remaining 5.3 → 5.7，不要停，只有 blocking 才 ask。
+```
+
+cc 会一气呵成完成全部并最后 5-段汇报。要点：
+
+- 只在 sub-agent **已经报过完整 plan + 你 reviewed approved** 后才用 batch
+- batch 内的 AskUserQuestion 仍会停下来——这是 feature 不是 bug
+- 若 batch 中途出意外，sub-agent 应主动停下报告
+
+### 7. driver findings 文件 round-N 化 ②
+
+driver 跑 hpcc / 远程发现新 bug 后**不要直接 send-keys 长 message**——会被 cc UI 截断 / 排版乱。
+正确做法：
+1. driver 写 `<project>/.driver_findings_<contextN>.md`（如 `.driver_findings_hpcc_w1.md`）
+2. send-keys `"读 .driver_findings_hpcc_w1.md 按里面修"` 触发 cc
+3. cc 自己 git commit 时 `.gitignore` 排除该文件（避免提到 driver 私有 channel 进 repo 历史）
+
+详细 spec 见 `/driver-findings` skill。
+
+### 8. ssh + sub-agent 链式坑 ②
+
+如果 driver 想自己跑 ssh 到 hpcc 抓证据再回喂 sub-agent，注意：
+
+- ssh non-interactive shell 不读 `.bashrc` → `conda` / `slurm` 命令找不到。
+  - 必须 `ssh hpcc bash -l /path/to/script.sh` 或脚本头加 `source $(conda info --base)/etc/profile.d/conda.sh`
+- 多 conda 安装同时存在时，`conda activate <name>` 失败但 `conda activate /full/path/to/env` 成功
+- 大量 quote 嵌套（ssh→bash→python -c→...）容易爆 → **直接 scp 一个 .sh 过去再 ssh 跑**
+- 见 hpcc deploy probe 示范：`scp /tmp/probe.sh hpcc:/tmp/ && ssh hpcc bash -l /tmp/probe.sh`
+
+### 9. busy-marker 维护 ⚠️ ①
+
+cc 用 30+ 种 "thinking" 动词标 spinner（Jitterbugging / Twisting / Blanching / Churned /
+Spawning / Editing / Reading / Searching / Whirlpooling / Billowing / Crunched / Cooked /
+Sautéed / Baked / Mulling / Doing / Harmonizing / Combobulating / Nebulizing / Brewed /
+Cogitated / Befuddling / Frosting / ...），不断添加。
+
+watcher 的 busy-marker regex 必须**定期补全**——否则会把 thinking 误判为 idle 触发 watcher
+提前 fire。**推荐**：用宽松 fallback `\(.*[0-9]+s ·` 匹配「N 秒 · 」时间标记（普适），
++ 显式动词 list 作 fast-path。完整 list 见本 skill 末 §Constants。
 
 ## Workflow
 
@@ -151,8 +200,19 @@ Sub-agent 末尾汇报后：
 ## Constants
 
 - **CAPTURE_LINES** = `300`（足够看到 1-2 个 AskUserQuestion + 上下文）
-- **IDLE_STABLE_SEC** = `15`（5 次 3-秒 stable 才算 idle，防 cc 工具调用间隙误判）
+- **IDLE_STABLE_SEC** = `15-24`（5-6 次 3-4-秒 stable 才算 idle，防 cc 工具调用间隙误判）
 - **MAX_TURN_TIME** = `15min`（单个 turn 超时 → driver 介入 ping 一下「你还在吗」）
+- **BUSY_MARKERS_REGEX**（vla3d 累计观察）：
+
+```
+Jitterbugging|Twisting|Blanching|Churned|Spawning|Editing|Reading|
+Searching|Whirlpooling|Billowing|Crunched|Cooked|Sautéed|Baked|
+Mulling|Doing|Harmonizing|Combobulating|Nebulizing|Brewed|Cogitated|
+Befuddling|Frosting|esc to interrupt|✶|✻|Submit answers|\(.*[0-9]+s ·
+```
+
+最后那个 `\(.*[0-9]+s ·` 是 fallback——cc 任何 spinner 都会显示 `(<seconds>s · ...)`
+时间标记。这条匹配上了即视为 busy。
 
 ## Output
 
@@ -177,6 +237,8 @@ driver 产物：
 - 跟 `/sleep-research` 互补：sleep-research = 自己 wrap 自己；remote-drive = 别人 wrap 你
 - 跟 `/spawn-task` 区别：spawn-task = fork 一个 Agent sub-agent in-process；remote-drive = 跨 process / 跨 session 控制独立的 CC instance
 - 跟 `/cross-host-sync` 联动：driver 调 cross-host-sync 知道 sub-agent 跑在哪台机器
+- 跟 `/sync-to-remote` 联动：driver 自己跑 sync-to-remote 把代码送 hpcc 验证，结果以 `/driver-findings` 文件回喂 sub-agent
+- 跟 `/driver-findings` 联动：远程发现的 bug 用 findings 文件格式标准化传回
 - 跟 `/meta-optimize` 联动：driver-sub-agent 协作日志是 self-evolution 高质量数据
 
 ## Example session

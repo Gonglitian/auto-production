@@ -72,13 +72,46 @@ allowed-tools: Bash(*), Read, Write, Edit
   Guard:   填 "if SR < 0.4 @ 5M then PIVOT"
 ```
 
+## External-ref validation (NEW in v2)
+
+> 实战由来：vla3d Sprint 2 contract 把 partition 写成 `raise@hpcc`——这是 stale
+> 信息，真实 hpcc 现有 partition 是 `batch / epyc / gpu / highclock / highmem`。
+> 如果 sign 时没 validate，到 sbatch 时才崩 + 损失几分钟到 hours。
+
+`sprint_contract.yaml` 里任何引用「外部资源标识符」的字段都必须在 `--sign` 阶段
+做 reachability check。常见：
+
+| 字段类型 | 检查 | 实现 |
+|---|---|---|
+| **slurm partition** | `sinfo -p $PARTITION` 返回非空 | `verify_partition_exists()` |
+| **conda env path** | 路径存在 + has python | `verify_conda_env_path()` |
+| **dataset HF repo** | `huggingface_hub.repo_exists()` | `verify_hf_repo()` |
+| **wandb project** | api.project() 不 404 | `verify_wandb_project()` |
+| **lerobot version pin** | `import lerobot; lerobot.__version__ == X` | `verify_pkg_version()` |
+| **arxiv ID 引用** | URL 200（cite-audit Layer 1 复用） | `verify_arxiv_id()` |
+
+完整 helper 见 [`templates/verify_external_ref.py`](../../templates/verify_external_ref.py).
+
+`--sign` workflow (v2)：
+
+```bash
+/sprint-contract --verify        # 5-tuple 字段 + threshold/seed check
+/sprint-contract --check-refs    # NEW: 跑所有外部 ref validator
+/sprint-contract --sign          # sha256 锁定 yaml + 写 audit trace
+```
+
+如 `--check-refs` 任何 fail → `--sign` 拒绝执行。
+
 ## Failure modes
 
 - yaml 解析错 → 提示语法
 - 用户硬要跑没合同 → 仍然 BLOCK，让 user 显式 `--force`（且 log 警告）
+- 外部 ref 检查失败（如 partition 不存在）→ exit 2 + 列出失败 ref + 修复建议
 
 ## See also
 
 - [`/pivot`](../pivot-decision/SKILL.md) — RESULTS gate 用 5-tuple 复盘
 - [`/run-zero`](../run-zero/SKILL.md) — 同 gate 另一道
-- [`templates/five_tuple.yaml`](../../templates/five_tuple.yaml)
+- [`/arch-plan`](../arch-plan/SKILL.md) — code-level external ref 守门（line# / API）
+- [`templates/sprint_contract.yaml`](../../templates/sprint_contract.yaml) — v2 schema 含 differentiators / baselines / axes_changed
+- [`templates/verify_external_ref.py`](../../templates/verify_external_ref.py) — runtime fail-loud helpers

@@ -5,7 +5,7 @@
 
 ## What this repo is
 
-A skill bundle for autonomous research, ARIS-style. 9 stages × 5 gates × **54 skills** (2 entry + 10 cross-cutting + 39 stage-specific + 3 gate/quality).
+A skill bundle for autonomous research, ARIS-style. 9 stages × 5 gates × **57 skills** (2 entry + 10 cross-cutting + 39 stage-specific + 3 gate/quality).
 
 ## Your job as agent reading this
 
