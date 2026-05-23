@@ -5,7 +5,7 @@
 
 ## What this repo is
 
-A skill bundle for autonomous research, ARIS-style. 9 stages × 5 gates × **57 skills** (2 entry + 10 cross-cutting + 39 stage-specific + 3 gate/quality).
+A skill bundle for autonomous research, ARIS-style. 9 stages × 5 gates × **57 skills** (2 entry + 10 cross-cutting + 39 stage-specific + 3 gate/quality + 3 driver/dev).
 
 ## Your job as agent reading this
 
@@ -26,6 +26,14 @@ A skill bundle for autonomous research, ARIS-style. 9 stages × 5 gates × **57 
 | 7 Doc | `/learn-tag` | — |
 | 8 Paper | `/paper-pipeline`, `/paper-mode`, `/citation-audit` ⭐, `/cross-review` ⭐, `/pubfig`, `/paper-talk`, `/paper-poster`, `/paper-slides`, `/rebuttal`, `/kill-argument`, `/resubmit-pipeline` | `/citation-audit` + `/cross-review` MANDATORY before FINAL gate |
 | 9 Promotion | — | — |
+
+## Driver / dev / deploy skills (only when YOU are a driver-Claude controlling another CC)
+
+- `/remote-drive` — full meta-skill for tmux send-keys control of another Claude Code session
+- `/driver-findings` — round-N findings file pattern for driver→sub-agent handoff
+- `/sync-to-remote` — rsync project + bootstrap auto-production on remote compute host; pairs with `/cross-host-sync`
+
+These are NOT for normal task execution — invoke them only when you're orchestrating another CC instance.
 
 ## Cross-cutting always-on (run as hooks, not by you)
 
