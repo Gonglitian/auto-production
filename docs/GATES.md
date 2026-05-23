@@ -4,6 +4,27 @@
 
 每个 gate = 「必须有 audit trace 文件存在 + commit 匹配，agent 才放行下一 stage」。
 
+## Trace status conventions
+
+每个 gate 的 trace 文件可以有 4 种 status（写在 trace JSON 的 `status` 字段，或 trace 文件名后缀）：
+
+| Status | 含义 | 何时用 | 谁能签 |
+|---|---|---|---|
+| `PASSED` | 真过了硬 check，所有 required artifact 齐 + commit 匹配 | 默认正常路径 | gate 脚本（自动） |
+| `SOFT_PASS_PENDING_DRIVER` | 硬 check 因前置缺失（如 idea-only stage 无 train code → /vla-audit 没法跑）必然 fail，但 stage 的核心产物（如 arch_plan.md）已就绪 | early stage 无完整代码时 | agent 写 trace + AskUserQuestion 让 driver/user 确认 |
+| `SOFT_PASS` | driver 看过 SOFT_PASS_PENDING 并签了字 | 上一个 status 的下一步 | driver/user 通过 AskUserQuestion 签 |
+| `SKIPPED` | 这个 gate item 在本 sprint 不适用（如无 train code 时的 /run-zero / /smoke-test） | 入口缺前置 | agent 写 SKIPPED.json + 注明 reason + 何时回来补 |
+
+**注意**：`SOFT_PASS` 必须是显式 user/driver 决策的产物，agent 不能自己升级 SOFT_PASS_PENDING → SOFT_PASS。
+
+## "no-commit-yet" policy for early stages
+
+Stage 1 (Idea) 时 project 经常还没 `git commit`（idea-only 产出还在 working tree）。此时：
+
+- gate trace 的 `head_commit` 字段允许写 `no-commit-yet`
+- 进入 Stage 2（写 code）前必须先 `git commit` —— METHOD/RESOURCE/RESULTS/FINAL 4 个 gate 都强制 commit 匹配
+- 推荐 workflow：Stage 1 末尾 → `git add . && git commit -m "Sprint N idea-stage artifacts"` → 再走 NOVELTY gate auto-check
+
 ---
 
 ## Gate 1 — NOVELTY (Stage 1 → 2)

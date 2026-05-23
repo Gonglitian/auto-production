@@ -32,7 +32,7 @@ auto-production/
 ├── CONTRIBUTING.md       # 怎么贡献新 skill
 ├── LICENSE               # MIT
 │
-├── skills/               # 54 个 skill，每个 1 份 SKILL.md（见下 "Skill 目录速查"）
+├── skills/               # 55 个 skill，每个 1 份 SKILL.md（见下 "Skill 目录速查"）
 │   ├── research-pipeline/SKILL.md  # ⭐ 主入口——一句话拉起 9-stage 全流程
 │   ├── sleep-research/SKILL.md     # ⭐ 夜间 autonomous wrapper
 │   └── ... (52 个 atomic skill，按 stage 和横切分类)
@@ -144,7 +144,7 @@ cp <repo>/templates/sprint_contract.yaml ./sprint_contract.yaml
 | **`/meta-optimize`** | agent 不会从错误学习；周复盘 failure log 自动 patch prompt | P0 |
 | **`/sleep-research`** | 你 200+ 次手写 stop-hook + heartbeat，固化命名 skill | P0 |
 
-完整 54 个 skill 见 [Skill 目录速查](#-skill-目录速查) + [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)。
+完整 55 个 skill 见 [Skill 目录速查](#-skill-目录速查) + [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)。
 
 ---
 
@@ -214,7 +214,7 @@ cp <repo>/templates/sprint_contract.yaml ./sprint_contract.yaml
 
 | `/debate-judge` N 立场辩论 + blind judge ｜ `/six-agent-team` PI/postdoc/PhD/eng/reviewer/writer 团队 |
 
-总计 **54** skills。
+总计 **55** skills。
 
 ---
 
