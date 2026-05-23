@@ -1,0 +1,29 @@
+# Default docker compose for auto-production project env.
+services:
+  dev:
+    build: .
+    image: ${PROJECT_NAME:-auto-prod-dev}:latest
+    container_name: ${PROJECT_NAME:-auto-prod-dev}
+    environment:
+      - CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}
+      - WANDB_API_KEY=${WANDB_API_KEY:-}
+      - HF_TOKEN=${HF_TOKEN:-}
+      - NOTION_TOKEN=${NOTION_TOKEN:-}
+      - AUTO_PRODUCTION_REPO=/opt/auto-production
+    volumes:
+      - .:/workspace
+      - ${DATA_DIR:-./data}:/data
+      - ${CKPT_DIR:-./ckpts}:/ckpts
+      - ~/.cache/huggingface:/root/.cache/huggingface
+      - ~/.netrc:/root/.netrc:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ipc: host
+    network_mode: host
+    stdin_open: true
+    tty: true

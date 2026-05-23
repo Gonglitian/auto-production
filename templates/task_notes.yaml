@@ -1,0 +1,19 @@
+# task_notes.yaml — phase-level resource/config declaration
+# Read by agent before any train.py invocation. See /task-notes-yaml skill.
+
+phase: ""                   # e.g. "training" / "eval" / "ablation"
+compute_budget:
+  gpu_count: 0              # e.g. 4
+  gpu_type: ""              # e.g. "rtx-pro-6000-blackwell"
+  wall_clock_hours: 0       # hard limit
+  partition: ""             # e.g. "raise@hpcc"
+  account: ""               # slurm account if any
+dataset_loader_code: ""     # e.g. "src/data/loader.py:CrowdFollowLoader"
+eval_rules:
+  primary_metric: ""        # e.g. "success_rate_mc10"
+  secondary_metrics: []     # list
+  seeds: []                 # e.g. [41,43,47,53,59]
+  baseline_run: ""          # path to .auto-production/baseline/run_zero_*.json
+deadline: ""                # ISO-8601, e.g. "2026-05-30T23:59:59+08:00"
+forbidden_moves: []         # e.g. ["change LR schedule", "swap backbone"]
+notes: ""
