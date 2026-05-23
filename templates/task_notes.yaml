@@ -1,19 +1,85 @@
 # task_notes.yaml — phase-level resource/config declaration
-# Read by agent before any train.py invocation. See /task-notes-yaml skill.
+# Read by agent BEFORE any train.py invocation. See /task-notes-yaml skill.
+#
+# Conventions extracted from vla3d Stage 4 real usage (auto-production
+# commit chain 10459f1 → 4785e3f). Fields marked REQUIRED are checked by
+# /task-notes-yaml --verify.
 
-phase: ""                   # e.g. "training" / "eval" / "ablation"
+phase: ""                       # REQUIRED. e.g. "training" / "eval" / "ablation" / "warmup"
+
+# -----------------------------------------------------------------------------
+# Compute
+# -----------------------------------------------------------------------------
 compute_budget:
-  gpu_count: 0              # e.g. 4
-  gpu_type: ""              # e.g. "rtx-pro-6000-blackwell"
-  wall_clock_hours: 0       # hard limit
-  partition: ""             # e.g. "raise@hpcc"
-  account: ""               # slurm account if any
-dataset_loader_code: ""     # e.g. "src/data/loader.py:CrowdFollowLoader"
+  gpu_count: 0                  # REQUIRED. e.g. 4
+  gpu_type: ""                  # REQUIRED. e.g. "rtx-pro-6000-blackwell"
+  wall_clock_hours: 0           # REQUIRED. hard limit; /pivot Guard checks this
+  partition: ""                 # e.g. "raise@hpcc"
+  account: ""                   # slurm account if any
+  qos: ""                       # e.g. "gpu"
+  reservation: ""               # if a hold-job exists
+
+# -----------------------------------------------------------------------------
+# Environment (NEW in v2 — see vla3d HF_HOME pitfall MEMORY.md/pitfall-HF_HOME)
+# -----------------------------------------------------------------------------
+environment_setup:
+  conda_env: ""                 # e.g. "/bigdata/jlilab/lgong024/.conda/envs/vla3d"
+  pip_lockfile: ""              # e.g. "requirements.lock"
+  # Mandatory env vars: train.py entry MUST `assert` each one before any work.
+  # Anything that silently mis-routes data / cache / tokens belongs here.
+  required_env_vars:
+    HF_HOME: ""                 # e.g. "/data4/hf_cache"  (avoid root-disk pollution)
+    WANDB_DIR: ""               # e.g. "/data4/wandb"
+    HF_TOKEN: "REDACTED"        # don't paste real token; assert presence only
+  # Files that the entry should `[ -e ]` check before starting.
+  required_paths:
+    - ""                        # e.g. "/data4/datasets/libero/" (mounted via SSHFS / symlink)
+
+# -----------------------------------------------------------------------------
+# Storage
+# -----------------------------------------------------------------------------
+storage:
+  data_disk: ""                 # e.g. "/data4 on tasl-labserver"
+  ckpt_dir: ""                  # e.g. "/data4/ckpts/vla3d/"
+  min_free_gb: 0                # hard requirement before any download
+  hf_cache_dir: ""              # if not using $HF_HOME default
+
+# -----------------------------------------------------------------------------
+# Dataset & loader
+# -----------------------------------------------------------------------------
+dataset_loader_code: ""         # REQUIRED. e.g. "src/data/loader.py:CrowdFollowLoader"
+datasets_in_scope: []           # e.g. ["LIBERO-Spatial", "LIBERO-Object", "RoboMimic-Lift"]
+datasets_deferred: []           # e.g. ["CALVIN — 166GB over budget per Stage 3"]
+
+# -----------------------------------------------------------------------------
+# Eval
+# -----------------------------------------------------------------------------
 eval_rules:
-  primary_metric: ""        # e.g. "success_rate_mc10"
-  secondary_metrics: []     # list
-  seeds: []                 # e.g. [41,43,47,53,59]
-  baseline_run: ""          # path to .auto-production/baseline/run_zero_*.json
-deadline: ""                # ISO-8601, e.g. "2026-05-30T23:59:59+08:00"
-forbidden_moves: []         # e.g. ["change LR schedule", "swap backbone"]
+  primary_metric: ""            # REQUIRED. e.g. "success_rate_mc10"
+  secondary_metrics: []
+  seeds: []                     # REQUIRED. e.g. [41, 43, 47, 53, 59]
+  baseline_run: ""              # REQUIRED. path to .auto-production/baseline/run_zero_<host>_<commit>.json
+  episodes_per_task: 50         # per pitfall-lerobot-libero-eval-bug, MUST be 10-different-inits
+
+# -----------------------------------------------------------------------------
+# Deadline
+# -----------------------------------------------------------------------------
+deadline: ""                    # REQUIRED. ISO-8601, e.g. "2026-05-30T23:59:59+08:00"
+buffer_for_writing: ""          # optional: paper write window
+
+# -----------------------------------------------------------------------------
+# Anti-scope-creep
+# -----------------------------------------------------------------------------
+forbidden_moves: []             # e.g. ["change LR schedule", "swap backbone", "add DA-CoT"]
+
+# -----------------------------------------------------------------------------
+# Week-1 hot-list (NEW in v2 — pin specific D1-D4 unblockers from /arch-plan)
+# -----------------------------------------------------------------------------
+hot_list:
+  - id: ""                      # e.g. "HOT-W1-001"
+    priority: ""                # P0 | P1 | P2
+    action: ""                  # e.g. "VGGT visual sanity on 1 LIBERO episode"
+    fail_over: ""               # e.g. "if reconstruction collapses → switch to MASt3R"
+    blocking_for: ""            # what later phase this unblocks
+
 notes: ""

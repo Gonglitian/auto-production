@@ -8,6 +8,17 @@
 #   /sprint-contract --verify
 #   /sprint-contract --sign
 
+# -----------------------------------------------------------------------------
+# Sprint identity
+# -----------------------------------------------------------------------------
+sprint: 1                       # int, incremented on /pivot REFINE/PIVOT
+version: v1                     # e.g. v1-idea-only / v2-method-specific
+supersedes: null                # path/sprint of older version, if any
+signed_at: ""                   # ISO-8601 set by --sign
+
+# -----------------------------------------------------------------------------
+# Karpathy 5-tuple (mandatory)
+# -----------------------------------------------------------------------------
 goal: |
   (one paragraph — the question this experiment answers)
   Example: "Verify that KL-distillation against 5 guiding policies
@@ -35,3 +46,58 @@ guard: |
   Example: "If SR < 60% at step 30M, or train_loss stalls for
   > 1M steps with relative-change < 1%, trigger PIVOT. Also
   PIVOT if KL > 5.0 (distillation diverging)."
+
+# -----------------------------------------------------------------------------
+# Cross-references (recommended; set after Stage 1-4 artifacts exist)
+# -----------------------------------------------------------------------------
+baseline_lock_ref: ""           # .auto-production/baseline/run_zero_<host>_<commit>.json
+task_notes_ref: "task_notes.yaml"
+arch_plan_ref: "docs/arch_plan.md"
+novelty_aggregated_ref: "idea-stage/novelty.json"
+deployment_ref: "docs/DEPLOYMENT.md"
+datalake_ref: "datalake/<domain>/"
+
+# -----------------------------------------------------------------------------
+# Deadline (recommended)
+# -----------------------------------------------------------------------------
+deadline:
+  primary_venue: ""             # e.g. "CoRL 2026 (deadline 2026-07-15)"
+  fallback_venue: ""
+  internal_sprint_end: ""       # e.g. "2026-06-13 (21 days from start)"
+  buffer_for_writing: ""        # e.g. "2026-06-14 to 2026-07-14"
+
+# -----------------------------------------------------------------------------
+# Budget (recommended)
+# -----------------------------------------------------------------------------
+budget:
+  compute: ""                   # e.g. "4x RTX PRO 6000 Blackwell @ hpcc raise"
+  storage: ""                   # e.g. ">=150GB on /data4, HF_HOME=/data4/hf_cache"
+  wall_clock_days: 0
+  api_cost_cap_usd: 0           # for /cross-review / S2 / etc.
+  human_attention: ""           # e.g. "driver async via tmux"
+
+# -----------------------------------------------------------------------------
+# NEW v2 sections — only fill these AFTER Stage 1-2 produce novelty_q* JSONs
+# Pattern extracted from vla3d Sprint 2 (commit 10459f1).
+# -----------------------------------------------------------------------------
+
+# What makes our method different from N closest prior works.
+# Each entry should map directly to an axis novelty_check identified as
+# unoccupied. Source novelty_check JSON in `differentiators[].source`.
+differentiators: []
+  # Example (vla3d):
+  # - id: "inference_time_gaussian_kv"
+  #   description: "Gaussians as INFERENCE-time queryable KV bank in action decoder, NOT training-time auxiliary loss"
+  #   distinguishes_from: ["GeoPredict (training-only)", "GST-VLA (block-level injection)"]
+  #   source: "idea-stage/novelty_q3.json#delta_2"
+
+# Baselines that MUST appear in the paper because novelty_check found them
+# in our design cell. Removing one of these is a /pivot trigger.
+mandatory_new_baselines: []
+  # Example (vla3d):
+  # - {id: "GeoPredict", arxiv: "2512.16811", role: "head-to-head Gaussian-on-pi0 incumbent"}
+  # - {id: "EvoScene-VLA", arxiv: "2605.21862", role: "per-step decoder co-denoising incumbent"}
+
+# wandb tag names for each axis we're varying — used by /tree-viz to color/group.
+axes_changed: []
+  # Example (vla3d): ["Gaussian-KV", "per-step", "decoder-only", "no-aux", "pi0.5"]
