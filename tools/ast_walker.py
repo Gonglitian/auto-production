@@ -153,6 +153,12 @@ class Walker(ast.NodeVisitor):
 
     visit_Nonlocal = visit_Global
 
+    def visit_NamedExpr(self, node):
+        # Walrus operator: `(x := expr)` binds x in surrounding scope.
+        if isinstance(node.target, ast.Name):
+            self.defs.add(node.target.id)
+        self.generic_visit(node)
+
     # -- uses & calls ------------------------------------------------------
     def visit_Name(self, node):
         if isinstance(node.ctx, ast.Load):
