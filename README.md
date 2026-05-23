@@ -32,23 +32,10 @@ auto-production/
 ├── CONTRIBUTING.md       # 怎么贡献新 skill
 ├── LICENSE               # MIT
 │
-├── skills/               # 51 个 skill，每个 1 份 SKILL.md
-│   ├── status/SKILL.md           # /status — 当前所有 background task + GPU + 最新 metric
-│   ├── vla-audit/SKILL.md        # /vla-audit ⭐ — train/eval pipeline 一致性 (你 #1 zero-shot bug)
-│   ├── cross-host-sync/SKILL.md  # /cross-host-sync — 4 机器 run/ckpt ↔ Notion DB
-│   ├── slurm-hold/SKILL.md       # /slurm-hold — hpcc raise 7-day hold + tmux + srun --overlap
-│   ├── auto-viz/SKILL.md         # /auto-viz — 实验完自动出 4 张图 PNG
-│   ├── html-homepage/SKILL.md    # /html-homepage — per-project live status html
-│   ├── citation-audit/SKILL.md   # /citation-audit ⭐ — 3-layer anchor 防 hallucination
-│   ├── cross-review/SKILL.md     # /cross-review ⭐ — Claude × GPT × Gemini 互审
-│   ├── meta-optimize/SKILL.md    # /meta-optimize — 周复盘 failure → patch prompt
-│   ├── sprint-contract/SKILL.md  # /sprint-contract — Karpathy 5-tuple gate
-│   ├── run-zero/SKILL.md         # /run-zero — baseline lock per machine
-│   ├── pivot-decision/SKILL.md   # /pivot — PROCEED/REFINE/PIVOT 三选一
-│   ├── smoke-test/SKILL.md       # /smoke — 起正式前先 smoke
-│   ├── promise-check/SKILL.md    # /promise-check — agent 说了 "我会..." 自动追踪
-│   ├── stall-detect/SKILL.md     # /stall-detect — N 分钟无 stdout 告警
-│   └── conclusion-first/SKILL.md # /conclusion-first — 报告 5-段强制格式
+├── skills/               # 54 个 skill，每个 1 份 SKILL.md（见下 "Skill 目录速查"）
+│   ├── research-pipeline/SKILL.md  # ⭐ 主入口——一句话拉起 9-stage 全流程
+│   ├── sleep-research/SKILL.md     # ⭐ 夜间 autonomous wrapper
+│   └── ... (52 个 atomic skill，按 stage 和横切分类)
 │
 ├── tools/                # Python 标准库 + bash 助手 (零外部依赖)
 │   ├── cross_host_sync.py        # Notion API + ssh 多机扫描
@@ -157,7 +144,77 @@ cp <repo>/templates/sprint_contract.yaml ./sprint_contract.yaml
 | **`/meta-optimize`** | agent 不会从错误学习；周复盘 failure log 自动 patch prompt | P0 |
 | **`/sleep-research`** | 你 200+ 次手写 stop-hook + heartbeat，固化命名 skill | P0 |
 
-完整 51 项见 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#part-v-实现优先级)。
+完整 54 个 skill 见 [Skill 目录速查](#-skill-目录速查) + [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)。
+
+---
+
+## 🗂️ Skill 目录速查
+
+按 9-stage × 横切机制分类。⭐ = P0 重点。
+
+### 🚪 主入口（2）
+
+| Skill | 一句话 |
+|---|---|
+| ⭐ **`/research-pipeline`** | 一句话拉起 Stage 1 → 9 全流程 |
+| ⭐ **`/sleep-research`** | 夜间 autonomous wrapper（stop-hook + heartbeat + cost cap） |
+
+### 横切 always-on（10）
+
+| Skill | 何用 |
+|---|---|
+| `/status` | 跨机器状态 |
+| `/conclusion-first` | 5-段报告强制格式 |
+| `/promise-check` | "我会..." 自动追踪 |
+| `/stall-detect` | N 分钟无 stdout 告警 |
+| `/double-check` | confidence 0-5 自查 |
+| `/concession-threshold` | 反 sycophancy |
+| `/cross-host-sync` | 4 机器 run/ckpt ↔ Notion |
+| `/slurm-hold` | 长期占位 + tmux 复用 |
+| `/meta-optimize` | 周复盘 failure → patch prompt |
+| `/hitl-mode` | 6 HITL 模式切换 |
+
+### Stage 1 — Idea（4）
+
+| `/idea-perspective` STORM N-paper 视角 ｜ `/idea-sim-convo` writer × expert role-play ｜ `/persona-probe` 8-stakeholder × 3Q ｜ `/novelty-check` S2/OpenAlex 查重 |
+
+### Stage 2 — Code（3）
+
+| `/arch-plan` 改 >3 文件先画依赖 ｜ `/ast-validate` Python AST 静态扫 ｜ ⭐ `/vla-audit` train/eval 6 维一致性 |
+
+### Stage 3 — Data（4）
+
+| `/resource-planning` 下载前估空间 ｜ `/corpus-schema` literature_corpus_entry ｜ `/benchmark-agent` 4-stage benchmark pipeline ｜ `/datalake` domain know-how 库 |
+
+### Stage 4 — Exp Design（3）
+
+| ⭐ `/sprint-contract` Karpathy 5-tuple ｜ `/task-notes-yaml` phase 资源 YAML ｜ ⭐ `/run-zero` baseline 锁定 |
+
+### Stage 5 — Tasks Running（4）
+
+| `/smoke-test` 起正式前先 smoke ｜ `/spawn-task` sub-agent fork 模板 ｜ `/audit-driven-retrain` scancel→audit→patch→retry ｜ `/docker-workplace` 每 project 一容器 |
+
+### Stage 6 — Result（6）
+
+| `/auto-viz` 4 张图自动出 ｜ `/html-homepage` live status 页 ｜ ⭐⭐ `/pivot` PROCEED/REFINE/PIVOT 决策 ｜ `/plateau-detect` plateau 触发 PIVOT 建议 ｜ `/auto-version` REFINE/PIVOT snapshot ｜ `/tree-viz` v1-vN 树状对比 ｜ `/findings-map` findings graph |
+
+### Stage 7 — Doc（1）
+
+| `/learn-tag` `[LEARN:method]` 路由 MEMORY.md |
+
+### Stage 8 — Paper（9）
+
+| `/paper-pipeline` 6-stage 流水线 ｜ `/paper-mode` 10-mode (intro/method/...) ｜ ⭐ `/citation-audit` 3-layer anchor ｜ ⭐ `/cross-review` Claude×GPT×Gemini ｜ `/pubfig` 投稿质量图 ｜ `/paper-talk` 12-min talk ｜ `/paper-poster` A0 海报 ｜ `/paper-slides` 10 页 ｜ `/rebuttal` reviewer 回复 ｜ `/kill-argument` 反驳武器库 ｜ `/resubmit-pipeline` 换 venue 重投 |
+
+### Gate / Quality（3）
+
+| `/gate` meta-gate-check (NOVELTY/METHOD/RESOURCE/RESULTS/FINAL) ｜ `/failure-checklist` A5 7 种失败模式 ｜ `/simplify-gate` 文件 >400/800 行告警/拦 |
+
+### Decision-quality（2）
+
+| `/debate-judge` N 立场辩论 + blind judge ｜ `/six-agent-team` PI/postdoc/PhD/eng/reviewer/writer 团队 |
+
+总计 **54** skills。
 
 ---
 

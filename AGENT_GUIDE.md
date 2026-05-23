@@ -5,7 +5,7 @@
 
 ## What this repo is
 
-A skill bundle for autonomous research, ARIS-style. 9 stages × 5 gates × 51 skills.
+A skill bundle for autonomous research, ARIS-style. 9 stages × 5 gates × **54 skills** (2 entry + 10 cross-cutting + 39 stage-specific + 3 gate/quality).
 
 ## Your job as agent reading this
 
@@ -19,7 +19,7 @@ A skill bundle for autonomous research, ARIS-style. 9 stages × 5 gates × 51 sk
 |---|---|---|
 | 1 Idea | `/idea-perspective`, `/idea-sim-convo`, `/novelty-check`, `/persona-probe` | `/novelty-check` mandatory before NOVELTY gate |
 | 2 Code | `/vla-audit` ⭐, `/arch-plan`, `/ast-validate` | `/vla-audit` MANDATORY before METHOD gate |
-| 3 Data | `/resource-planning`, `/corpus-schema`, `/benchmark-agent` | `/resource-planning` MANDATORY |
+| 3 Data | `/resource-planning`, `/corpus-schema`, `/benchmark-agent`, `/datalake` | `/resource-planning` MANDATORY |
 | 4 Exp Design | `/sprint-contract` ⭐ (5-tuple), `/task-notes-yaml`, `/run-zero` ⭐ | All 3 MANDATORY before RESOURCE gate |
 | 5 Running | `/cross-host-sync`, `/slurm-hold`, `/spawn-task`, `/sleep-research`, `/audit-driven-retrain`, `/smoke-test` | `/smoke-test` MANDATORY (stop-hook default) |
 | 6 Result | `/auto-viz`, `/pivot` ⭐, `/plateau-detect`, `/auto-version`, `/tree-viz`, `/findings-map` | `/pivot` MANDATORY before RESULTS gate |
@@ -40,6 +40,9 @@ Plus you (agent) should:
 - Output report format = `/conclusion-first` 5 sections: **Conclusion / What I changed / What I checked / Risks / Next step**
 - Apply `/double-check` before any user-visible claim (confidence 0-5 + suspicious points)
 - Apply `/concession-threshold` before agreeing with user proposal (evaluate trade-offs, alternatives, Guard violations)
+- Use `/gate --name <NAME>` to verify a stage transition rather than judging "I think it's good"
+- Run `/failure-checklist` before RESULTS and FINAL gates
+- For stuck decisions, escalate to `/debate-judge` (N-position debate) or `/six-agent-team` (route to PI/postdoc/reviewer)
 
 ## Helper resolver chain (3 layers)
 
