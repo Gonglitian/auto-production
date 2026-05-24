@@ -11,7 +11,13 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 REQUIRED_FRONTMATTER = {"name", "description", "argument-hint", "allowed-tools"}
-RECOMMENDED_BODY_SECTIONS = ["## Overview", "## When to Use", "## Workflow"]
+# Recommended sections match by regex prefix so "## Overview", "## When to Use",
+# "## When to Use This Skill", "## Workflow", "## Workflow (high level)" all count.
+RECOMMENDED_BODY_SECTION_PATTERNS = [
+    (r"^##\s+Overview\b",          "## Overview"),
+    (r"^##\s+When to use\b",       "## When to Use"),
+    (r"^##\s+Workflow\b",          "## Workflow"),
+]
 
 def check_one(path):
     text = path.read_text()
@@ -31,9 +37,9 @@ def check_one(path):
     if name_m and name_m.group(1) != path.parent.name:
         errors.append(f"name `{name_m.group(1)}` != dir name `{path.parent.name}`")
 
-    for section in RECOMMENDED_BODY_SECTIONS:
-        if section not in text:
-            warns.append(f"missing recommended section: {section!r}")
+    for pattern, label in RECOMMENDED_BODY_SECTION_PATTERNS:
+        if not re.search(pattern, text, re.MULTILINE | re.IGNORECASE):
+            warns.append(f"missing recommended section: {label!r}")
 
     return errors, warns
 

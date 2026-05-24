@@ -29,6 +29,7 @@ class Walker(ast.NodeVisitor):
         self.func_sigs = {}           # name -> (n_required_positional, accepts_kwargs)
         self.calls = []               # (name, lineno, n_positional, n_keyword)
         self._param_names = []        # stack of param-name sets per nested scope
+        self._wildcard_imports = []   # `from X import *` modules — disables unresolved check
 
     # -- imports -----------------------------------------------------------
     def visit_Import(self, node):
@@ -38,7 +39,11 @@ class Walker(ast.NodeVisitor):
 
     def visit_ImportFrom(self, node):
         for n in node.names:
-            self.imports.add(n.asname or n.name)
+            if n.name == "*":
+                # `from X import *` — wildcard; can't resolve names statically
+                self._wildcard_imports.append(node.module or "?")
+            else:
+                self.imports.add(n.asname or n.name)
         self.generic_visit(node)
 
     # -- function / class defs ---------------------------------------------
@@ -159,6 +164,40 @@ class Walker(ast.NodeVisitor):
             self.defs.add(node.target.id)
         self.generic_visit(node)
 
+    # -- match statement (Python 3.10+) -----------------------------------
+    def visit_Match(self, node):
+        for case in node.cases:
+            self._collect_pattern_names(case.pattern)
+        self.generic_visit(node)
+
+    def _collect_pattern_names(self, pat):
+        if pat is None:
+            return
+        # MatchAs: `case <pat> as x` or `case x` (== MatchAs(None, 'x'))
+        if isinstance(pat, ast.MatchAs):
+            if pat.name:
+                self.defs.add(pat.name)
+            self._collect_pattern_names(pat.pattern)
+        elif isinstance(pat, ast.MatchStar):
+            if pat.name:
+                self.defs.add(pat.name)
+        elif isinstance(pat, ast.MatchMapping):
+            if pat.rest:
+                self.defs.add(pat.rest)
+            for p in pat.patterns:
+                self._collect_pattern_names(p)
+        elif isinstance(pat, ast.MatchSequence):
+            for p in pat.patterns:
+                self._collect_pattern_names(p)
+        elif isinstance(pat, ast.MatchOr):
+            for p in pat.patterns:
+                self._collect_pattern_names(p)
+        elif isinstance(pat, ast.MatchClass):
+            for p in pat.patterns:
+                self._collect_pattern_names(p)
+            for p in pat.kwd_patterns:
+                self._collect_pattern_names(p)
+
     # -- uses & calls ------------------------------------------------------
     def visit_Name(self, node):
         if isinstance(node.ctx, ast.Load):
@@ -182,16 +221,18 @@ def check_file(path):
         return [f"{path}:{e.lineno}: SyntaxError: {e.msg}"]
     w = Walker(path)
     w.visit(tree)
-    known = w.defs | w.imports | BUILTINS | {"self", "cls", "_"}
-    seen = set()
-    for name, lineno in w.uses:
-        if name in known or name in seen:
-            continue
-        # `__name__`, `__file__`, etc. are runtime-injected — never flag.
-        if name.startswith("__") and name.endswith("__"):
-            continue
-        seen.add(name)
-        issues.append(f"{path}:{lineno}: unresolved name `{name}`")
+    # `from X import *` makes static name-resolution unreliable — skip that
+    # check but still do call-arity below.
+    if not w._wildcard_imports:
+        known = w.defs | w.imports | BUILTINS | {"self", "cls", "_"}
+        seen = set()
+        for name, lineno in w.uses:
+            if name in known or name in seen:
+                continue
+            if name.startswith("__") and name.endswith("__"):
+                continue
+            seen.add(name)
+            issues.append(f"{path}:{lineno}: unresolved name `{name}`")
     for name, lineno, n_pos, n_kw in w.calls:
         sig = w.func_sigs.get(name)
         if sig is None:

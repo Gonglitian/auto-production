@@ -162,7 +162,7 @@ git commit -am "feat: ..."
 
 ## 7. 全 skill 速查
 
-完整 54 个 skill 列表见 [`../README.md`](../README.md#🗂️-skill-目录速查) 或 [`ARCHITECTURE.md`](ARCHITECTURE.md)。
+完整 57 个 skill 列表见 [`../README.md`](../README.md#🗂️-skill-目录速查) 或 [`ARCHITECTURE.md`](ARCHITECTURE.md)。
 
 最常用 9 个：
 

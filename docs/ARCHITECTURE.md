@@ -1,6 +1,6 @@
 # ARCHITECTURE.md
 
-> 9 stages × 5 named gates × 5 横切机制 × 51 skills. 全部映射回 `../design.md` 的编号。
+> 9 stages × 5 named gates × 5 横切机制 × **57 skills** (51 from design.md + 6 grown from real-test). 全部映射回 `../design.md` 的编号。
 
 ## 横切机制（always-on，每个 stage 都执行）
 

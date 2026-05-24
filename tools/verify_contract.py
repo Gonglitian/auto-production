@@ -17,6 +17,17 @@ THRESHOLD_RE = re.compile(r"[<>≤≥]=?\s*\d|\d+\s*%|\d+\.\d+")
 SEED_RE = re.compile(r"seed|baseline|run_0|run-0|run zero", re.IGNORECASE)
 UA = "auto-production-verify-contract/0.1"
 
+# Strip a ` # comment` suffix while preserving #s inside quoted segments.
+# Conservative: only strip if there's a space-then-# pattern and no quote
+# follows on the same line.
+_INLINE_COMMENT = re.compile(r"\s+#(?!.*[\"\']).*$")
+
+def _strip_inline_comment(s):
+    return _INLINE_COMMENT.sub("", s).rstrip()
+
+def _clean_value(v):
+    return _strip_inline_comment(v).strip().strip('"').strip("'")
+
 
 # ---------------------------------------------------------------------------
 # YAML mini-parser (we already used this; extended to support `- ` lists and
@@ -72,9 +83,9 @@ def parse_yaml(text):
                 if m_item:
                     if cur_v is not None:
                         validators.append(cur_v)
-                    cur_v = {m_item.group(1): m_item.group(2).strip().strip('"').strip("'")}
+                    cur_v = {m_item.group(1): _clean_value(m_item.group(2))}
                 elif m_field and cur_v is not None:
-                    cur_v[m_field.group(1)] = m_field.group(2).strip().strip('"').strip("'")
+                    cur_v[m_field.group(1)] = _clean_value(m_field.group(2))
                 continue
 
         # top-level scalar
@@ -82,7 +93,7 @@ def parse_yaml(text):
         if m and not raw.startswith(" "):
             flush_field()
             key = m.group(1)
-            val = m.group(2).strip()
+            val = _clean_value(m.group(2))
             buf = [val] if val and val != "|" else []
         elif raw.startswith(" "):
             if key is not None and not in_validators:
