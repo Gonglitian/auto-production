@@ -8,7 +8,7 @@ Two modes:
 
 Pure stdlib only (urllib for HF / arxiv / wandb HEAD checks).
 """
-import argparse, json, os, re, ssl, subprocess, sys, urllib.error, urllib.parse, urllib.request
+import argparse, json, os, re, shlex, ssl, subprocess, sys, urllib.error, urllib.parse, urllib.request
 from pathlib import Path
 
 REQUIRED = ["goal", "scope", "metric", "verify", "guard"]
@@ -149,6 +149,20 @@ def _http_get(url, timeout=15):
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     return urllib.request.urlopen(req, timeout=timeout).read()
 
+def _shell_cmd(host, inner, login=True):
+    """Build a subprocess argv that runs `inner` (a shell command string)
+    either locally or via ssh. The inner is shell-quoted to survive ssh's
+    join-with-space arg reassembly — without this, `[ -x ... ]` gets parsed
+    as `-x` (bash xtrace) by the remote shell. See vla3d round 5 R5.8b bug.
+    """
+    bash_flag = "-l" if login else ""
+    if host:
+        # ssh joins trailing argv with spaces — must single-quote inner.
+        # Use shlex.quote to handle embedded single quotes safely.
+        bash_argv = ["bash"] + ([bash_flag] if bash_flag else []) + ["-c", shlex.quote(inner)]
+        return ["ssh", host] + bash_argv
+    return ["bash"] + ([bash_flag] if bash_flag else []) + ["-c", inner]
+
 def verify_partition(entry):
     """{type: partition, name: gpu, host: hpcc (optional)}
 
@@ -161,8 +175,7 @@ def verify_partition(entry):
     host = entry.get("host") or ""
     if not name:
         return False, "partition: missing 'name'"
-    # Use full sinfo (default columns) so we don't fight quote-escaping through ssh.
-    cmd = (["ssh", host] if host else []) + ["bash", "-l", "-c", f"sinfo -p {name} 2>&1"]
+    cmd = _shell_cmd(host, f"sinfo -p {shlex.quote(name)} 2>&1")
     try:
         out = subprocess.run(cmd, capture_output=True, text=True, timeout=15).stdout
     except Exception as e:
@@ -194,7 +207,8 @@ def verify_conda_env_path(entry):
     host = entry.get("host") or ""
     if not path:
         return False, "conda_env: missing 'path'"
-    cmd = (["ssh", host] if host else []) + ["bash", "-l", "-c", f"[ -x {path}/bin/python ] && {path}/bin/python --version 2>&1"]
+    qp = shlex.quote(path)
+    cmd = _shell_cmd(host, f"[ -x {qp}/bin/python ] && {qp}/bin/python --version 2>&1")
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
     except Exception as e:
@@ -242,8 +256,11 @@ def verify_pkg_version(entry):
     if not pkg:
         return False, "pkg_version: missing 'pkg'"
     py = f"{env_path}/bin/python" if env_path else "python3"
+    # Note: passing Python -c code through ssh requires the FULL command to be
+    # shell-quoted as a single arg (see _shell_cmd docstring + vla3d R5.8b bug).
     code = f"import {pkg}; print(getattr({pkg}, '__version__', 'unknown'))"
-    cmd = (["ssh", host] if host else []) + ["bash", "-l", "-c", f"{py} -c \"{code}\" 2>&1"]
+    inner = f'{shlex.quote(py)} -c {shlex.quote(code)} 2>&1'
+    cmd = _shell_cmd(host, inner)
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
     except Exception as e:
